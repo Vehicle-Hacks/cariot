@@ -20,7 +20,7 @@
 # SPDX-License-Identifier: Apache-2.0.
 
 import argparse
-from awscrt import io, mqtt, http
+from awscrt import io, mqtt, auth, http
 from awsiot import mqtt_connection_builder
 import sys
 import threading
@@ -45,6 +45,7 @@ from serial import Serial
 parser = argparse.ArgumentParser(description="Send and receive messages through and MQTT connection.")
 parser.add_argument('--endpoint', required=True, help="Your AWS IoT custom endpoint, not including a port. " +
                                                       "Ex: \"abcd123456wxyz-ats.iot.us-east-1.amazonaws.com\"")
+parser.add_argument('--port', type=int, help="Specify port. AWS IoT supports 443 and 8883.")
 parser.add_argument('--cert', help="File path to your client certificate, in PEM format.")
 parser.add_argument('--key', help="File path to your private key, in PEM format.")
 parser.add_argument('--root-ca', help="File path to root certificate authority, in PEM format. " +
@@ -52,12 +53,20 @@ parser.add_argument('--root-ca', help="File path to root certificate authority, 
                                       "your trust store.")
 parser.add_argument('--client-id', default="test-" + str(uuid4()), help="Client ID for MQTT connection.")
 parser.add_argument('--topic', default="test/topic", help="Topic to subscribe to, and publish messages to.")
+parser.add_argument('--message', default="Hello World!", help="Message to publish. " +
+                                                              "Specify empty string to publish nothing.")
 parser.add_argument('--count', default=10, type=int, help="Number of messages to publish/receive before exiting. " +
                                                           "Specify 0 to run forever.")
+parser.add_argument('--signing-region', default='us-east-1', help="If you specify --use-web-socket, this " +
+    "is the region that will be used for computing the Sigv4 signature")
+parser.add_argument('--proxy-host', help="Hostname of proxy to connect to.")
+parser.add_argument('--proxy-port', type=int, default=8080, help="Port of proxy to connect to.")
+parser.add_argument('--verbosity', choices=[x.name for x in io.LogLevel], default=io.LogLevel.NoLogs.name,
+    help='Logging level')
 
 # Using globals to simplify sample code
 args = parser.parse_args()
-
+print("2")
 io.init_logging(getattr(io.LogLevel, args.verbosity), 'stderr')
 
 received_count = 0
@@ -104,8 +113,36 @@ obdAvailable = False
 obdVoltage = 0
 obdCoolant = 0
 obdOil = 0
+obdLoad = 0
+obdIntake = 0
 
 # OBD Thread
+def obd_thread():
+    global obdRunning, obdAvailable, obdVoltage, obdCoolant, obdOil, obdLoad, obdIntake
+    obdConnection = obd.OBD()
+    print("OBD connected")
+    while obdRunning:
+        cmd = obd.commands.COOLANT_TEMP
+        response = obdConnection.query(cmd)
+        obdCoolant = response.value.magnitude
+        
+        cmd = obd.commands.ELM_VOLTAGE
+        response = obdConnection.query(cmd)
+        obdVoltage = response.value.magnitude
+        
+        #cmd = obd.commands.OIL_TEMP
+        #response = obdConnection.query(cmd)
+        #obdOil = response.value
+        
+        cmd = obd.commands.ENGINE_LOAD
+        response = obdConnection.query(cmd)
+        obdLoad = response.value.magnitude
+        
+        cmd = obd.commands.INTAKE_TEMP
+        response = obdConnection.query(cmd)
+        obdIntake = response.value.magnitude
+        obdAvailable = True
+        time.sleep(0.5)
 
 # Callback when connection is accidentally lost.
 def on_connection_interrupted(connection, error, **kwargs):
@@ -144,6 +181,7 @@ def on_message_received(topic, payload, dup, qos, retain, **kwargs):
 
 if __name__ == '__main__':
     # Spin up resources
+    print("Starting up")
     event_loop_group = io.EventLoopGroup(1)
     host_resolver = io.DefaultHostResolver(event_loop_group)
     client_bootstrap = io.ClientBootstrap(event_loop_group, host_resolver)
@@ -185,15 +223,22 @@ if __name__ == '__main__':
     subscribe_result = subscribe_future.result()
     print("Subscribed with {}".format(str(subscribe_result['qos'])))
  
-    # Initialize GPS and OBD
+    print("Initializing GPS")
     gpsThread = Thread(target=gps_thread)
     gpsThread.start();
     
-    # Wait for GPS and OBD to be ready
-    print("Initializing GPS and OBD")
     while gpsAvailable == False:
         print(".")
         time.sleep(1)
+    print("GPS ready")
+
+    print("Initializing OBD")
+    obdThread = Thread(target=obd_thread)
+    obdThread.start()
+    while obdAvailable == False:
+        print(".")
+        time.sleep(1)
+    print("OBD ready")
     
     # Publish message to server desired number of times.
     # This step is skipped if message is blank.
@@ -207,12 +252,16 @@ if __name__ == '__main__':
         publish_count = 1
         while (publish_count <= args.count) or (args.count == 0):
             rndNumber = random.random()
-            message = {"coolant": 95.4,
-                       "latitude": lat,
+            message = {"latitude": lat,
                        "longitude": lon,
                        "altitude": alt,
                        "quality": quality,
-                       "counter":publish_count,
+                       "counter": publish_count,
+                       "voltage": obdVoltage,
+                       "coolant": obdCoolant,
+                       "oil": obdOil,
+                       "load": obdLoad,
+                       "intake": obdIntake,
                        "ID":"Car_01"}
             print("Publishing message to topic '{}': {}".format(args.topic, message))
             message_json = json.dumps(message)
@@ -235,6 +284,9 @@ if __name__ == '__main__':
     gpsRunning = False
     gpsThread.join(5)
     # Disconnect
+    print("Stopping OBD")
+    obdRunning = False
+    obdThread.join(5)
     print("Disconnecting...")
     disconnect_future = mqtt_connection.disconnect()
     disconnect_future.result()
