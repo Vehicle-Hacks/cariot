@@ -114,11 +114,15 @@ obdVoltage = 0
 obdCoolant = 0
 obdOil = 0
 obdLoad = 0
+obdThrottle = 0
 obdIntake = 0
+obdRpm = 0
+obdFuelRate = 0
+obdEcuVoltage = 0
 
 # OBD Thread
 def obd_thread():
-    global obdRunning, obdAvailable, obdVoltage, obdCoolant, obdOil, obdLoad, obdIntake
+    global obdRunning, obdAvailable, obdVoltage, obdCoolant, obdOil, obdLoad, obdIntake, obdRpm, obdThrottle, obdFuelRate, obdEcuVoltage
     obdConnection = obd.OBD()
     print("OBD connected")
     obdCoolantAvailable = obdConnection.supports(obd.commands.COOLANT_TEMP)
@@ -126,6 +130,10 @@ def obd_thread():
     obdOilAvailable = obdConnection.supports(obd.commands.OIL_TEMP)
     obdLoadAvailable = obdConnection.supports(obd.commands.ENGINE_LOAD)
     obdIntakeAvailable = obdConnection.supports(obd.commands.INTAKE_TEMP)
+    obdRpmAvailable = obdConnection.supports(obd.commands.RPM)
+    obdThrottleAvailable = obdConnection.supports(obd.commands.THROTTLE_POS)
+    obdFuelRateAvailable = obdConnection.supports(obd.commands.FUEL_RATE)
+    obdEcuVoltageAvailable = obdConnection.supports(obd.commands.CONTROL_MODULE_VOLTAGE)
     while obdRunning:
         if obdCoolantAvailable:
             cmd = obd.commands.COOLANT_TEMP
@@ -151,6 +159,22 @@ def obd_thread():
             cmd = obd.commands.INTAKE_TEMP
             response = obdConnection.query(cmd)
             obdIntake = response.value.magnitude
+            
+        if obdRpmAvailable:
+            response = obdConnection.query(obd.commands.RPM)
+            obdRpm = response.value.magnitude
+            
+        if obdThrottleAvailable:
+            response = obdConnection.query(obd.commands.THROTTLE_POS)
+            obdThrottle = response.value.magnitude
+            
+        if obdFuelRateAvailable:
+            response = obdConnection.query(obd.commands.FUEL_RATE)
+            obdFuelRate = response.value.magnitude
+            
+        if obdEcuVoltageAvailable:
+            response = obdConnection.query(obd.commands.CONTROL_MODULE_VOLTAGE)
+            obdEcuVoltage = response.value.magnitude
         
         obdAvailable = True
         time.sleep(0.5)
@@ -273,6 +297,10 @@ if __name__ == '__main__':
                        "oil": obdOil,
                        "load": obdLoad,
                        "intake": obdIntake,
+                       "throttle": obdThrottle,
+                       "rpm": obdRpm,
+                       "fuelrate": obdFuelRate,
+                       "ecuVoltage": obdEcuVoltage,
                        "ID":"Car_01"}
             print("Publishing message to topic '{}': {}".format(args.topic, message))
             message_json = json.dumps(message)
