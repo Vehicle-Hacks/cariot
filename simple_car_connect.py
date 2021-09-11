@@ -283,7 +283,31 @@ if __name__ == '__main__':
             print ("Sending messages until program killed")
         else:
             print ("Sending {} message(s)".format(args.count))
-
+            
+        #Hack: Send init message to force right data types in amazon timestream
+        message = {"latitude": 0.1,
+                   "longitude": 0.1,
+                   "altitude": 0.1,
+                   "quality": 0,
+                   "counter": -1,
+                   "voltage": 0.1,
+                   "coolant": 0.1,
+                   "oil": 0.1,
+                   "load": 0.1,
+                   "intake": 0.1,
+                   "throttle": 0.1,
+                   "rpm": 0,
+                   "fuelrate": 0.1,
+                   "ecuVoltage": 0.1,
+                   "ID":"JEEP"}
+        print("Publishing initial message to topic '{}': {}".format(args.topic, message))
+        message_json = json.dumps(message)
+        mqtt_connection.publish(
+            topic=args.topic,
+            payload=message_json,
+            qos=mqtt.QoS.AT_LEAST_ONCE)
+        time.sleep(1)
+            
         publish_count = 1
         while (publish_count <= args.count) or (args.count == 0):
             rndNumber = random.random()
@@ -301,7 +325,7 @@ if __name__ == '__main__':
                        "rpm": obdRpm,
                        "fuelrate": obdFuelRate,
                        "ecuVoltage": obdEcuVoltage,
-                       "ID":"Car_01"}
+                       "ID":"JEEP"}
             print("Publishing message to topic '{}': {}".format(args.topic, message))
             message_json = json.dumps(message)
             mqtt_connection.publish(
