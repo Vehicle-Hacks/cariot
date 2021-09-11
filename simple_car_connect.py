@@ -121,26 +121,37 @@ def obd_thread():
     global obdRunning, obdAvailable, obdVoltage, obdCoolant, obdOil, obdLoad, obdIntake
     obdConnection = obd.OBD()
     print("OBD connected")
+    obdCoolantAvailable = obdConnection.supports(obd.commands.COOLANT_TEMP)
+    obdVoltageAvailable = obdConnection.supports(obd.commands.ELM_VOLTAGE)
+    obdOilAvailable = obdConnection.supports(obd.commands.OIL_TEMP)
+    obdLoadAvailable = obdConnection.supports(obd.commands.ENGINE_LOAD)
+    obdIntakeAvailable = obdConnection.supports(obd.commands.INTAKE_TEMP)
     while obdRunning:
-        cmd = obd.commands.COOLANT_TEMP
-        response = obdConnection.query(cmd)
-        obdCoolant = response.value.magnitude
+        if obdCoolantAvailable:
+            cmd = obd.commands.COOLANT_TEMP
+            response = obdConnection.query(cmd)
+            obdCoolant = response.value.magnitude
         
-        cmd = obd.commands.ELM_VOLTAGE
-        response = obdConnection.query(cmd)
-        obdVoltage = response.value.magnitude
+        if obdVoltageAvailable:
+            cmd = obd.commands.ELM_VOLTAGE
+            response = obdConnection.query(cmd)
+            obdVoltage = response.value.magnitude
         
-        #cmd = obd.commands.OIL_TEMP
-        #response = obdConnection.query(cmd)
-        #obdOil = response.value
+        if obdOilAvailable:
+            cmd = obd.commands.OIL_TEMP
+            response = obdConnection.query(cmd)
+            obdOil = response.value
         
-        cmd = obd.commands.ENGINE_LOAD
-        response = obdConnection.query(cmd)
-        obdLoad = response.value.magnitude
+        if obdLoadAvailable:
+            cmd = obd.commands.ENGINE_LOAD
+            response = obdConnection.query(cmd)
+            obdLoad = response.value.magnitude
         
-        cmd = obd.commands.INTAKE_TEMP
-        response = obdConnection.query(cmd)
-        obdIntake = response.value.magnitude
+        if obdIntakeAvailable:
+            cmd = obd.commands.INTAKE_TEMP
+            response = obdConnection.query(cmd)
+            obdIntake = response.value.magnitude
+        
         obdAvailable = True
         time.sleep(0.5)
 
