@@ -1,0 +1,16 @@
+{
+    "thing": {
+        "endpoint" : "a2dt0lfqh6su9o-ats.iot.eu-central-1.amazonaws.com",
+        "certfile" : "thing-certificate.pem.crt",
+        "keyfile" : "thing-private.pem.key",
+        "rootCaFile" : "AmazonRootCA1.pem",
+        "clientId" : "test-9601bf7d-809a-4cc7-8d9b-3e4090124c3b",
+        "topic" : "cars/02"
+    },
+    "gps": {
+        "interface" : "/dev/ttyACM0",
+        "baudrate" : 115200
+    },
+    "obd": {
+    }
+}
