@@ -1,10 +1,8 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Created on Sun Sep  5 07:17:09 2021
+Created on Wed Mai 4 07:38:09 2022
 
-cariot-service.py
-Copyright (C) 2021 Ralph Grewe
+gps.py
+Copyright (C) 2022 Ralph Grewe
   
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -21,14 +19,10 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
 import threading
-import time
-import json
 
 import serial
 from pynmeagps import NMEAReader
 import pynmeagps.exceptions as nme
-
-import cariot.aws
 
 class gps_reader:
     def __init__(self):
@@ -83,19 +77,3 @@ class gps_reader:
             ) as err:
                 print(f"Something went wrong {err}")
                 continue
-
-config_file = open('./cariot-config.json')
-cariot_config = json.load(config_file)
-
-aws = cariot.aws.aws_iot()
-aws.start(cariot_config)
-
-gps = gps_reader()
-gps.start(cariot_config)
-
-print("running")
-time.sleep(10)
-print("Stopping thread")
-
-aws.stop()
-gps.stop()
