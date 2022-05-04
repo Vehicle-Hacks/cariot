@@ -26,6 +26,7 @@ import json
 
 import cariot.aws
 import cariot.gps
+import cariot.obd
 
 config_file = open('./cariot-config.json')
 cariot_config = json.load(config_file)
@@ -36,9 +37,13 @@ aws.start(cariot_config)
 gps = cariot.gps.gps_reader()
 gps.start(cariot_config)
 
+obd = cariot.obd.obd_reader()
+obd.start(cariot_config)
+
 print("running")
 time.sleep(10)
 print("Stopping thread")
 
 aws.stop()
 gps.stop()
+obd.stop()

@@ -29,10 +29,12 @@ class gps_reader:
         self.gps_running = False
         self.gps_available = False
         self.gps_config = ""
-        self.lat = 0
-        self.lon = 0
-        self.alt = 0
-        self.quality = 0
+        self.gps_data = {
+            "latitude": 0,
+            "longitude": 0,
+            "altitude": 0,
+            "quality": 0            
+        }
         self.lock = threading.Lock()
 
     def start(self,config):
@@ -63,10 +65,10 @@ class gps_reader:
                 if parsed_data:
                     if parsed_data.msgID == "GGA":
                         self.lock.acquire()
-                        self.lat = parsed_data.lat
-                        self.lon = parsed_data.lon
-                        self.alt = parsed_data.alt
-                        self.quality = parsed_data.quality
+                        self.gps_data['latitude'] = parsed_data.lat
+                        self.gps_data['longitude'] = parsed_data.lon
+                        self.gps_data['altitude'] = parsed_data.alt
+                        self.gps_data['quality'] = parsed_data.quality
                         self.gps_available = True
                         self.lock.release()
             except (
@@ -77,3 +79,6 @@ class gps_reader:
             ) as err:
                 print(f"Something went wrong {err}")
                 continue
+
+    def gps_data(self):
+        return self.gps_data
