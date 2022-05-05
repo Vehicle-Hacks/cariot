@@ -32,7 +32,12 @@ from kivy.app import App
 
 class CariotApp(App):
     def build(self):
-        return cariot.gui.CariotMain()
+        self.gui = cariot.gui.CariotMain()
+        return self.gui
+
+    def on_stop(self):
+        self.gui.stop()
+
 
 if __name__ == '__main__':
     print("Starting App")

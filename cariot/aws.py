@@ -69,7 +69,6 @@ class aws_iot(GridLayout):
 
         aws_iot_connect_future = aws_iot_connection.connect()
         aws_iot_connect_future.result()
-        print("Connected")
         self.gui_status.text = 'AWS Connected'
         counter = 0
 
@@ -78,7 +77,6 @@ class aws_iot(GridLayout):
             data.update(self.obd.get_data())
             data.update(self.gps.get_data())
             message_json = json.dumps(data)
-            print(message_json)
             aws_iot_connection.publish(
                 topic=self.thing_config['topic'],
                 payload=message_json,
@@ -90,4 +88,3 @@ class aws_iot(GridLayout):
 
         aws_iot_disconnect_future = aws_iot_connection.disconnect()
         aws_iot_disconnect_future.result()
-        print("Disconnected!")
