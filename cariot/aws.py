@@ -18,20 +18,33 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-from awscrt import io
+from awscrt import io, mqtt
 from awsiot import mqtt_connection_builder
 import threading
 import time
+import json
 
-class aws_iot:
-    def __init__(self):
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.label import Label
+
+class aws_iot(GridLayout):
+    def __init__(self, **kwargs):
+        super(aws_iot, self).__init__(**kwargs)
+        self.cols = 2
+        self.gui_status = Label(text='AWS Offline')
+        self.add_widget(self.gui_status)
+        self.gui_messages = Label(text='message')
+        self.add_widget(self.gui_messages)
+
         self.aws_running = False
         self.thing_config = ""
         self.lock = threading.Lock()
 
-    def start(self, config):
-        self.aws_running = True
+    def start(self, config, gps, obd):
         self.thing_config = config['thing']
+        self.gps = gps
+        self.obd = obd
+        self.aws_running = True
         self.aws_thread = threading.Thread(target=self.aws_loop) 
         self.aws_thread.start()
 
@@ -57,11 +70,24 @@ class aws_iot:
         aws_iot_connect_future = aws_iot_connection.connect()
         aws_iot_connect_future.result()
         print("Connected")
+        self.gui_status.text = 'AWS Connected'
+        counter = 0
 
         while (self.aws_running == True):
-            print("A")
+            data = {"counter": counter, "ID": "testID"}
+            data.update(self.obd.get_data())
+            data.update(self.gps.get_data())
+            message_json = json.dumps(data)
+            print(message_json)
+            aws_iot_connection.publish(
+                topic=self.thing_config['topic'],
+                payload=message_json,
+                qos=mqtt.QoS.AT_LEAST_ONCE)
+            self.gui_messages.text = str(counter)
+
+            counter += 1
             time.sleep(1)
 
         aws_iot_disconnect_future = aws_iot_connection.disconnect()
         aws_iot_disconnect_future.result()
-        print("Disconnected!")                    
+        print("Disconnected!")

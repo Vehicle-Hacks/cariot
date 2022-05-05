@@ -24,8 +24,20 @@ import serial
 from pynmeagps import NMEAReader
 import pynmeagps.exceptions as nme
 
-class gps_reader:
-    def __init__(self):
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.label import Label
+
+class gps_reader(GridLayout):
+    def __init__(self, **kwargs):
+        super(gps_reader, self).__init__(**kwargs)
+        self.cols = 3
+        self.gui_status = Label(text='GPS Offline')
+        self.add_widget(self.gui_status)
+        self.gui_lat = Label(text='Lat: no data')
+        self.add_widget(self.gui_lat)
+        self.gui_lon = Label(text='Lon: no data')
+        self.add_widget(self.gui_lon)
+
         self.gps_running = False
         self.gps_available = False
         self.gps_config = ""
@@ -58,6 +70,7 @@ class gps_reader:
 
         nms = NMEAReader(gpsStream)
         print('GPS started')
+        self.gui_status.text = 'GPS connected'
 
         while self.gps_running:
             try:
@@ -71,6 +84,9 @@ class gps_reader:
                         self.gps_data['quality'] = parsed_data.quality
                         self.gps_available = True
                         self.lock.release()
+
+                        self.gui_lat.text = "Lat:" + str(parsed_data.lat)
+                        self.gui_lon.text = "Lon:" + str(parsed_data.lon)
             except (
                 nme.NMEAStreamError,
                 nme.NMEAMessageError,
@@ -80,5 +96,5 @@ class gps_reader:
                 print(f"Something went wrong {err}")
                 continue
 
-    def gps_data(self):
+    def get_data(self):
         return self.gps_data

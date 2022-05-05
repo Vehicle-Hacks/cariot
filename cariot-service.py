@@ -20,30 +20,21 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
+import kivy
+
+
 import threading
 import time
-import json
 
-import cariot.aws
-import cariot.gps
-import cariot.obd
+import cariot.gui
 
-config_file = open('./cariot-config.json')
-cariot_config = json.load(config_file)
+from kivy.app import App
 
-aws = cariot.aws.aws_iot()
-aws.start(cariot_config)
+class CariotApp(App):
+    def build(self):
+        return cariot.gui.CariotMain()
 
-gps = cariot.gps.gps_reader()
-gps.start(cariot_config)
-
-obd = cariot.obd.obd_reader()
-obd.start(cariot_config)
-
-print("running")
-time.sleep(10)
-print("Stopping thread")
-
-aws.stop()
-gps.stop()
-obd.stop()
+if __name__ == '__main__':
+    print("Starting App")
+    CariotApp().run()
+    print("Stopping App")

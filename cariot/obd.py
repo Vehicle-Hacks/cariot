@@ -124,5 +124,5 @@ class obd_reader:
             obdAvailable = True
             time.sleep(0.5)
 
-    def obd_data(self):
+    def get_data(self):
         return self.obd_data
