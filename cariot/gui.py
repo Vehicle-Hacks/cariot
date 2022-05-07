@@ -20,7 +20,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from kivy.app import App
 from kivy.uix.label import Label
-from kivy.uix.gridlayout import GridLayout
+from kivy.uix.boxlayout import BoxLayout
 
 import json
 
@@ -28,26 +28,26 @@ import cariot.aws
 import cariot.gps
 import cariot.obd
 
-class CariotMain(GridLayout):
+class CariotMain(BoxLayout):
     def __init__(self, **kwargs):
         super(CariotMain, self).__init__(**kwargs)
-        self.rows = 3
+        self.orientation = 'vertical'
 
         config_file = open('./cariot-config.json')
         cariot_config = json.load(config_file)
 
-        self.gps = cariot.gps.gps_reader()
+        self.gps = cariot.gps.gps_reader(size_hint=(1,.2))
         self.gps.start(cariot_config)
 
-        self.obd = cariot.obd.obd_reader()
+        self.obd = cariot.obd.obd_reader(size_hint=(1,.6))
         self.obd.start(cariot_config)
 
-        self.aws = cariot.aws.aws_iot()
+        self.aws = cariot.aws.aws_iot(size_hint=(1,.2))
         self.aws.start(cariot_config, self.gps, self.obd)
         
         self.add_widget(self.aws)
         self.add_widget(self.gps)
-        self.add_widget(Label(text='OBD Dummy'))
+        self.add_widget(self.obd)
 
     def stop(self):
         self.gps.stop()

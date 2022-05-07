@@ -32,6 +32,7 @@ class gps_reader(GridLayout):
         super(gps_reader, self).__init__(**kwargs)
         self.cols = 3
         self.gui_status = Label(text='GPS Offline')
+        self.gui_status.color = (1,0,0)
         self.add_widget(self.gui_status)
         self.gui_lat = Label(text='Lat: no data')
         self.add_widget(self.gui_lat)
@@ -71,6 +72,7 @@ class gps_reader(GridLayout):
         nms = NMEAReader(gpsStream)
         print('GPS started')
         self.gui_status.text = 'GPS connected'
+        self.gui_status.color = (0,1,0)
 
         while self.gps_running:
             try:

@@ -32,6 +32,7 @@ class aws_iot(GridLayout):
         super(aws_iot, self).__init__(**kwargs)
         self.cols = 2
         self.gui_status = Label(text='AWS Offline')
+        self.gui_status.color = (1,0,0)
         self.add_widget(self.gui_status)
         self.gui_messages = Label(text='message')
         self.add_widget(self.gui_messages)
@@ -70,6 +71,7 @@ class aws_iot(GridLayout):
         aws_iot_connect_future = aws_iot_connection.connect()
         aws_iot_connect_future.result()
         self.gui_status.text = 'AWS Connected'
+        self.gui_status.color = (0,1,0)
         counter = 0
 
         while (self.aws_running == True):
