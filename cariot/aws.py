@@ -30,6 +30,8 @@ class aws_iot():
         self.thing_config = ""
         self.lock = threading.Lock()
         self.aws_thread = ''
+        self.aws_connected = False
+        self.gui_update_fcn = ''
 
     def start(self, config, gps, obd):
         self.thing_config = config['thing']
@@ -38,6 +40,7 @@ class aws_iot():
         self.aws_running = True
         self.aws_thread = threading.Thread(target=self.aws_loop) 
         self.aws_thread.start()
+        self.counter = 0
 
     def stop(self):
         self.aws_running = False
@@ -62,10 +65,12 @@ class aws_iot():
         aws_iot_connect_future = aws_iot_connection.connect()
         aws_iot_connect_future.result()
         print('AWS connected')
-        counter = 0
+        self.aws_connected = True
+        if self.gui_update_fcn:
+            self.gui_update_fcn()
 
         while (self.aws_running == True):
-            data = {"counter": counter, "ID": "testID"}
+            data = {"counter": self.counter, "ID": "testID"}
             data.update(self.obd.get_data())
             data.update(self.gps.get_data())
             message_json = json.dumps(data)
@@ -73,9 +78,10 @@ class aws_iot():
                 topic=self.thing_config['topic'],
                 payload=message_json,
                 qos=mqtt.QoS.AT_LEAST_ONCE)
-            print(message_json)
+            if self.gui_update_fcn:
+                self.gui_update_fcn()
 
-            counter += 1
+            self.counter += 1
             time.sleep(1)
 
         aws_iot_disconnect_future = aws_iot_connection.disconnect()

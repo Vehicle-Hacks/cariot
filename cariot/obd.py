@@ -40,6 +40,8 @@ class obd_reader():
         }
         self.lock = threading.Lock()
         self.obd_thread = ''
+        self.obd_status =  obd.OBDStatus.NOT_CONNECTED
+        self.gui_update_fcn = ''
 
     def start(self,config):
         self.obd_running = True
@@ -58,23 +60,24 @@ class obd_reader():
 
         while connecting:
             obdConnection = obd.OBD()
-            obdStatus = obdConnection.status()
+            self.obdStatus = obdConnection.status()
 
-            if obdStatus == obd.OBDStatus.NOT_CONNECTED:
+            if self.obdStatus == obd.OBDStatus.NOT_CONNECTED:
                 print('OBD: no connection')
                 time.sleep(1)
-            if obdStatus == obd.OBDStatus.ELM_CONNECTED:
+            if self.obdStatus == obd.OBDStatus.ELM_CONNECTED:
                 print('OBD: ELM connected')
                 time.sleep(1)
-            if obdStatus == obd.OBDStatus.OBD_CONNECTED:
+            if self.obdStatus == obd.OBDStatus.OBD_CONNECTED:
                 print('OBD: port detected')
                 time.sleep(1)
-            if obdStatus == obd.OBDStatus.CAR_CONNECTED:
+            if self.obdStatus == obd.OBDStatus.CAR_CONNECTED:
                 print('OBD: connected')
                 connecting = False
-
             if not self.obd_running:
                 connecting = False
+            if self.gui_update_fcn:
+                self.gui_update_fcn()
 
         obdCoolantAvailable = obdConnection.supports(obd.commands.COOLANT_TEMP)
         obdVoltageAvailable = obdConnection.supports(obd.commands.ELM_VOLTAGE)
@@ -160,6 +163,8 @@ class obd_reader():
             aliveCounter += 1
             self.gui_alive.text = str(aliveCounter)
             self.obd_data['obdAlive'] = aliveCounter
+            if self.gui_update_fcn:
+                self.gui_update_fcn()
 
     def get_data(self):
         return self.obd_data

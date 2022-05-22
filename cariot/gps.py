@@ -39,6 +39,7 @@ class gps_reader():
         self.lock = threading.Lock()
         self.gui_update_fcn = ''
         self.gps_thread = ''
+        self.gps_conntected = False
 
     def start(self,config):
         self.gps_running = True
@@ -62,6 +63,7 @@ class gps_reader():
 
         nms = NMEAReader(gpsStream)
         print('GPS started')
+        self.gps_connected = True
         aliveCounter = 0
 
         while self.gps_running:

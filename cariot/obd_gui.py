@@ -18,11 +18,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
+import obd
+
 from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 
 class obd_gui(GridLayout):
-    def __init__(self,**kwargs):
+    def __init__(self, obd_reader, **kwargs):
         super(obd_gui,self).__init__(**kwargs)
         self.cols = 4
         self.rows = 3
@@ -53,26 +55,28 @@ class obd_gui(GridLayout):
         self.gui_fuelrate = Label(text='Fuel:')
         self.add_widget(self.gui_fuelrate)
 
-    def status(self):
-        if obdStatus == obd.OBDStatus.NOT_CONNECTED:
+        self.obd = obd_reader
+        self.obd.gui_update_fcn = self.update
+
+    def update(self):
+        if self.obd.obdStatus == obd.OBDStatus.NOT_CONNECTED:
             self.gui_status.text = 'Connection Error'
             self.gui_status.color = (1,0,0)
-        if obdStatus == obd.OBDStatus.ELM_CONNECTED:
+        if self.obd.obdStatus == obd.OBDStatus.ELM_CONNECTED:
             self.gui_status.text = 'ELM327 detected'
             self.gui_status.color = (0.5,0.5,0)
-        if obdStatus == obd.OBDStatus.OBD_CONNECTED:
+        if self.obd.obdStatus == obd.OBDStatus.OBD_CONNECTED:
             self.gui_status.text = 'OBD port detected'
             self.gui_status.color = (1,1,0)
-        if obdStatus == obd.OBDStatus.CAR_CONNECTED:
+        if self.obd.obdStatus == obd.OBDStatus.CAR_CONNECTED:
             self.gui_status.text = 'OBD connected'
             self.gui_status.color = (0,1,0)
 
-    def update(self):
-        self.gui_coolant.text = 'Water: ' + str(response.value.magnitude) + ' °C'
-        self.gui_voltage.text = str(response.value.magnitude) + 'V'
-        self.gui_oil.text = 'Oil: ' + str(response.value) + ' °C'
-        self.gui_load.text = 'Load: ' + str(response.value.magnitude) + '%'
-        self.gui_intake.text = 'Intake: ' + str(response.value.magnitude) + ' °C'
-        self.gui_rpm.text = str(response.value.magnitude) + ' rpm'
-        self.gui_throttle.text = 'Throttle: ' + str(response.value.magnitude) + ' %'
-        self.gui_fuelrate.text = 'Fuel Rate: ' + str(response.value.magnitude)
+        self.gui_coolant.text = 'Water: ' + str(self.obd.obd_data['coolant']) + ' °C'
+        self.gui_voltage.text = str(self.obd.obd_data['voltage']) + 'V'
+        self.gui_oil.text = 'Oil: ' + str(self.obd.obd_data['oil']) + ' °C'
+        self.gui_load.text = 'Load: ' + str(self.obd.obd_data['load']) + '%'
+        self.gui_intake.text = 'Intake: ' + str(self.obd.obd_data['intake']) + ' °C'
+        self.gui_rpm.text = str(self.obd.obd_data['rpm']) + ' rpm'
+        self.gui_throttle.text = 'Throttle: ' + str(self.obd.obd_data['throttle']) + ' %'
+        self.gui_fuelrate.text = 'Fuel Rate: ' + str(self.obd.obd_data['fuelrate'])

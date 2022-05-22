@@ -25,9 +25,11 @@ from kivy.uix.boxlayout import BoxLayout
 import json
 
 import cariot.aws
+import cariot.aws_gui
 import cariot.gps
 import cariot.gps_gui
 import cariot.obd
+import cariot.obd_gui
 
 class CariotMain(BoxLayout):
     def __init__(self, **kwargs):
@@ -37,19 +39,21 @@ class CariotMain(BoxLayout):
         config_file = open('./cariot-config.json')
         cariot_config = json.load(config_file)
 
-        self.gps_gui = cariot.gps_gui.gps_gui(size_hint=(1,.2))
         self.gps = cariot.gps.gps_reader()
+        self.gps_gui = cariot.gps_gui.gps_gui(self.gps, size_hint=(1,.2))
         self.gps.start(cariot_config)
 
-        self.obd = cariot.obd.obd_reader(size_hint=(1,.6))
+        self.obd = cariot.obd.obd_reader()
+        self.obd_gui = cariot.obd_gui.obd_gui(self.obd, size_hint=(1,.6))
         self.obd.start(cariot_config)
 
-        self.aws = cariot.aws.aws_iot(size_hint=(1,.2))
+        self.aws = cariot.aws.aws_iot()
+        self.aws_gui = cariot.aws_gui.aws_gui(self.aws, size_hint=(1,.2))
         self.aws.start(cariot_config, self.gps, self.obd)
         
-        self.add_widget(self.aws)
+        self.add_widget(self.aws_gui)
         self.add_widget(self.gps_gui)
-        self.add_widget(self.obd)
+        self.add_widget(self.obd_gui)
 
     def stop(self):
         self.gps.stop()

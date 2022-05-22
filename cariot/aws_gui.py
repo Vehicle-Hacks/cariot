@@ -22,18 +22,20 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 
 class aws_gui(GridLayout):
-    def __init__(self, **kwargs):
-        super(aws_iot, self).__init__(**kwargs)
+    def __init__(self, aws_iot, **kwargs):
+        super(aws_gui, self).__init__(**kwargs)
         self.cols = 2
         self.gui_status = Label(text='AWS Offline')
         self.gui_status.color = (1,0,0)
         self.add_widget(self.gui_status)
         self.gui_messages = Label(text='message')
         self.add_widget(self.gui_messages)
-
-    def status(self):
-        self.gui_status.text = 'AWS Connected'
-        self.gui_status.color = (0,1,0)
+        self.aws = aws_iot
+        self.aws.gui_update_fcn = self.update
 
     def update(self):
-            self.gui_messages.text = str(counter)
+        if self.aws.aws_connected:
+            self.gui_status.text = 'AWS Connected'
+            self.gui_status.color = (0,1,0)
+
+        self.gui_messages.text = str(self.aws.counter)

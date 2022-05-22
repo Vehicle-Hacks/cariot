@@ -24,7 +24,7 @@ from kivy.uix.gridlayout import GridLayout
 from kivy.uix.label import Label
 
 class gps_gui(GridLayout):
-    def __init__(self,  **kwargs):
+    def __init__(self, gps_reader,  **kwargs):
         super(gps_gui, self).__init__(**kwargs)
         self.cols = 3
         self.gui_status = Label(text='GPS Offline')
@@ -35,10 +35,13 @@ class gps_gui(GridLayout):
         self.gui_lon = Label(text='Lon: no data')
         self.add_widget(self.gui_lon)
 
-    def status(self, gps):
-        self.gui_status.text = 'GPS connected'
-        self.gui_status.color = (0,1,0)
+        self.gps = gps_reader
+        self.gps.gui_update_fcn = self.update
 
-    def update(self, gps):
-        self.gui_lat.text = "Lat:" + str(gps.gps_data['latitude'])
-        self.gui_lon.text = "Lon:" + str(gps.gps_data['longitude'])
+    def update(self):
+        if self.gps.gps_connected:
+            self.gui_status.text = 'GPS connected'
+            self.gui_status.color = (0,1,0)
+
+        self.gui_lat.text = "Lat:" + str(self.gps.gps_data['latitude'])
+        self.gui_lon.text = "Lon:" + str(self.gps.gps_data['longitude'])
