@@ -24,22 +24,12 @@ import threading
 import time
 import json
 
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.label import Label
-
-class aws_iot(GridLayout):
-    def __init__(self, **kwargs):
-        super(aws_iot, self).__init__(**kwargs)
-        self.cols = 2
-        self.gui_status = Label(text='AWS Offline')
-        self.gui_status.color = (1,0,0)
-        self.add_widget(self.gui_status)
-        self.gui_messages = Label(text='message')
-        self.add_widget(self.gui_messages)
-
+class aws_iot():
+    def __init__(self):
         self.aws_running = False
         self.thing_config = ""
         self.lock = threading.Lock()
+        self.aws_thread = ''
 
     def start(self, config, gps, obd):
         self.thing_config = config['thing']
@@ -51,7 +41,8 @@ class aws_iot(GridLayout):
 
     def stop(self):
         self.aws_running = False
-        self.aws_thread.join(5)        
+        if self.aws_thread:
+            self.aws_thread.join(5)        
 
     def aws_loop(self):
         event_loop_group = io.EventLoopGroup(1)
@@ -70,8 +61,7 @@ class aws_iot(GridLayout):
 
         aws_iot_connect_future = aws_iot_connection.connect()
         aws_iot_connect_future.result()
-        self.gui_status.text = 'AWS Connected'
-        self.gui_status.color = (0,1,0)
+        print('AWS connected')
         counter = 0
 
         while (self.aws_running == True):
@@ -83,7 +73,7 @@ class aws_iot(GridLayout):
                 topic=self.thing_config['topic'],
                 payload=message_json,
                 qos=mqtt.QoS.AT_LEAST_ONCE)
-            self.gui_messages.text = str(counter)
+            print(message_json)
 
             counter += 1
             time.sleep(1)

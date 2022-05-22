@@ -24,21 +24,8 @@ import serial
 from pynmeagps import NMEAReader
 import pynmeagps.exceptions as nme
 
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.label import Label
-
-class gps_reader(GridLayout):
-    def __init__(self, **kwargs):
-        super(gps_reader, self).__init__(**kwargs)
-        self.cols = 3
-        self.gui_status = Label(text='GPS Offline')
-        self.gui_status.color = (1,0,0)
-        self.add_widget(self.gui_status)
-        self.gui_lat = Label(text='Lat: no data')
-        self.add_widget(self.gui_lat)
-        self.gui_lon = Label(text='Lon: no data')
-        self.add_widget(self.gui_lon)
-
+class gps_reader():
+    def __init__(self):
         self.gps_running = False
         self.gps_available = False
         self.gps_config = ""
@@ -46,9 +33,12 @@ class gps_reader(GridLayout):
             "latitude": 0,
             "longitude": 0,
             "altitude": 0,
-            "quality": 0            
+            "quality": 0,
+            "gpsAlive": 0        
         }
         self.lock = threading.Lock()
+        self.gui_update_fcn = ''
+        self.gps_thread = ''
 
     def start(self,config):
         self.gps_running = True
@@ -58,7 +48,8 @@ class gps_reader(GridLayout):
 
     def stop(self):
         self.gps_running = False
-        self.gps_thread.join(5)
+        if self.gps_thread:
+            self.gps_thread.join(5)
 
     def gps_loop(self):
         try:
@@ -71,8 +62,7 @@ class gps_reader(GridLayout):
 
         nms = NMEAReader(gpsStream)
         print('GPS started')
-        self.gui_status.text = 'GPS connected'
-        self.gui_status.color = (0,1,0)
+        aliveCounter = 0
 
         while self.gps_running:
             try:
@@ -84,11 +74,13 @@ class gps_reader(GridLayout):
                         self.gps_data['longitude'] = parsed_data.lon
                         self.gps_data['altitude'] = parsed_data.alt
                         self.gps_data['quality'] = parsed_data.quality
+                        aliveCounter += 1
+                        self.gps_data['gpsAlive'] = aliveCounter
                         self.gps_available = True
                         self.lock.release()
 
-                        self.gui_lat.text = "Lat:" + str(parsed_data.lat)
-                        self.gui_lon.text = "Lon:" + str(parsed_data.lon)
+                        if self.gui_update_fcn:
+                            self.gui_update_fcn()
             except (
                 nme.NMEAStreamError,
                 nme.NMEAMessageError,

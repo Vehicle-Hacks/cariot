@@ -29,6 +29,7 @@ import time
 import cariot.gui
 
 from kivy.app import App
+from kivy.config import Config
 
 class CariotApp(App):
     def build(self):
@@ -41,5 +42,7 @@ class CariotApp(App):
 
 if __name__ == '__main__':
     print("Starting App")
+    Config.set('graphics','width',480)
+    Config.set('graphics','height',320)
     CariotApp().run()
     print("Stopping App")

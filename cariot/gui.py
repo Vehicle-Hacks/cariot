@@ -26,6 +26,7 @@ import json
 
 import cariot.aws
 import cariot.gps
+import cariot.gps_gui
 import cariot.obd
 
 class CariotMain(BoxLayout):
@@ -36,7 +37,8 @@ class CariotMain(BoxLayout):
         config_file = open('./cariot-config.json')
         cariot_config = json.load(config_file)
 
-        self.gps = cariot.gps.gps_reader(size_hint=(1,.2))
+        self.gps_gui = cariot.gps_gui.gps_gui(size_hint=(1,.2))
+        self.gps = cariot.gps.gps_reader()
         self.gps.start(cariot_config)
 
         self.obd = cariot.obd.obd_reader(size_hint=(1,.6))
@@ -46,7 +48,7 @@ class CariotMain(BoxLayout):
         self.aws.start(cariot_config, self.gps, self.obd)
         
         self.add_widget(self.aws)
-        self.add_widget(self.gps)
+        self.add_widget(self.gps_gui)
         self.add_widget(self.obd)
 
     def stop(self):

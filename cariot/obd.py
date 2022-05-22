@@ -22,41 +22,8 @@ import obd
 import threading
 import time
 
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.label import Label
-
-class obd_reader(GridLayout):
-    def __init__(self,**kwargs):
-        super(obd_reader,self).__init__(**kwargs)
-        self.cols = 4
-        self.rows = 3
-
-        self.gui_status = Label(text='OBD Offline')
-        self.gui_status.color = (1,0,0)
-        self.add_widget(self.gui_status)
-        self.gui_protocol = Label(text='None')
-        self.add_widget(self.gui_protocol)
-        self.gui_voltage = Label(text='- V')
-        self.add_widget(self.gui_voltage)
-        self.gui_spacer1 = Label(text='reserved')
-        self.add_widget(self.gui_spacer1)
-        self.gui_coolant = Label(text='Water: - °C')
-        self.add_widget(self.gui_coolant)
-        self.gui_oil = Label(text='Oil: - °C')
-        self.add_widget(self.gui_oil)
-        self.gui_intake = Label(text='Intake: - °C')
-        self.add_widget(self.gui_intake)
-        self.gui_spacer2 = Label(text='Reserved')
-        self.add_widget(self.gui_spacer2)
-        self.gui_rpm = Label(text='- rpm')
-        self.add_widget(self.gui_rpm)
-        self.gui_throttle = Label(text='Throttle: - %')
-        self.add_widget(self.gui_throttle)
-        self.gui_load = Label(text='Load - %')
-        self.add_widget(self.gui_load)
-        self.gui_fuelrate = Label(text='Fuel Rate:')
-        self.add_widget(self.gui_fuelrate)
-
+class obd_reader():
+    def __init__(self):
         self.obd_running = True
         self.obd_available = False
         self.obd_data = {
@@ -68,9 +35,11 @@ class obd_reader(GridLayout):
             "throttle": 0,
             "rpm": 0,
             "fuelrate": 0,
-            "ecuVoltage": 0
+            "ecuVoltage": 0,
+            "obdAlive": 0
         }
         self.lock = threading.Lock()
+        self.obd_thread = ''
 
     def start(self,config):
         self.obd_running = True
@@ -80,29 +49,33 @@ class obd_reader(GridLayout):
 
     def stop(self):
         self.obd_running = False
-        self.obd_thread.join(5)        
+        if self.obd_thread:
+            self.obd_thread.join(5)        
 
     def obd_loop(self):
         connecting = True
+        aliveCounter = 0
+
         while connecting:
             obdConnection = obd.OBD()
             obdStatus = obdConnection.status()
 
             if obdStatus == obd.OBDStatus.NOT_CONNECTED:
-                self.gui_status.text = 'Connection Error'
-                self.gui_status.color = (1,0,0)
+                print('OBD: no connection')
+                time.sleep(1)
             if obdStatus == obd.OBDStatus.ELM_CONNECTED:
-                self.gui_status.text = 'ELM327 detected'
-                self.gui_status.color = (0.5,0.5,0)
+                print('OBD: ELM connected')
+                time.sleep(1)
             if obdStatus == obd.OBDStatus.OBD_CONNECTED:
-                self.gui_status.text = 'OBD port detected'
-                self.gui_status.color = (1,1,0)
+                print('OBD: port detected')
+                time.sleep(1)
             if obdStatus == obd.OBDStatus.CAR_CONNECTED:
-                self.gui_status.text = 'OBD connected'
-                self.gui_status.color = (0,1,0)
+                print('OBD: connected')
                 connecting = False
 
-        print("OBD connected")
+            if not self.obd_running:
+                connecting = False
+
         obdCoolantAvailable = obdConnection.supports(obd.commands.COOLANT_TEMP)
         obdVoltageAvailable = obdConnection.supports(obd.commands.ELM_VOLTAGE)
         obdOilAvailable = obdConnection.supports(obd.commands.OIL_TEMP)
@@ -118,8 +91,6 @@ class obd_reader(GridLayout):
                 cmd = obd.commands.COOLANT_TEMP
                 response = obdConnection.query(cmd)
                 if not response.is_null():
-                    self.gui_coolant.text = 'Water: ' + str(response.value.magnitude) + ' °C'
-
                     self.lock.acquire()
                     self.obd_data['coolant'] = response.value.magnitude
                     self.lock.release()
@@ -128,8 +99,6 @@ class obd_reader(GridLayout):
                 cmd = obd.commands.ELM_VOLTAGE
                 response = obdConnection.query(cmd)
                 if not response.is_null():
-                    self.gui_voltage.text = str(response.value.magnitude) + 'V'
-
                     self.lock.acquire()
                     self.obd_data['voltage'] = response.value.magnitude
                     self.lock.release()
@@ -138,8 +107,6 @@ class obd_reader(GridLayout):
                 cmd = obd.commands.OIL_TEMP
                 response = obdConnection.query(cmd)
                 if not response.is_null():
-                    self.gui_oil.text = 'Oil: ' + str(response.value) + ' °C'
-
                     self.lock.acquire()
                     self.obd_data['oil'] = response.value
                     self.lock.release()
@@ -148,8 +115,6 @@ class obd_reader(GridLayout):
                 cmd = obd.commands.ENGINE_LOAD
                 response = obdConnection.query(cmd)
                 if not response.is_null():
-                    self.gui_load.text = 'Load: ' + str(response.value.magnitude) + '%'
-
                     self.lock.acquire()
                     self.obd_data['load'] = response.value.magnitude
                     self.lock.release()
@@ -158,8 +123,6 @@ class obd_reader(GridLayout):
                 cmd = obd.commands.INTAKE_TEMP
                 response = obdConnection.query(cmd)
                 if not response.is_null():
-                    self.gui_intake.text = 'Intake: ' + str(response.value.magnitude) + ' °C'
-
                     self.lock.acquire()
                     self.obd_data['intake'] = response.value.magnitude
                     self.lock.release()
@@ -167,8 +130,6 @@ class obd_reader(GridLayout):
             if obdRpmAvailable:
                 response = obdConnection.query(obd.commands.RPM)
                 if not response.is_null():
-                    self.gui_rpm.text = str(response.value.magnitude) + ' rpm'
-                
                     self.lock.acquire()
                     self.obd_data['rpm'] = response.value.magnitude
                     self.lock.release()
@@ -176,8 +137,6 @@ class obd_reader(GridLayout):
             if obdThrottleAvailable:
                 response = obdConnection.query(obd.commands.THROTTLE_POS)
                 if not response.is_null():
-                    self.gui_throttle.text = 'Throttle: ' + str(response.value.magnitude) + ' %'
-
                     self.lock.acquire()
                     self.obd_data['throttle'] = response.value.magnitude
                     self.lock.release()
@@ -185,8 +144,6 @@ class obd_reader(GridLayout):
             if obdFuelRateAvailable:
                 response = obdConnection.query(obd.commands.FUEL_RATE)
                 if not response.is_null():
-                    self.gui_fuelrate.text = 'Fuel Rate: ' + str(response.value.magnitude)
-
                     self.lock.acquire()
                     self.obd_data['fuelrate'] = response.value.magnitude
                     self.lock.release()
@@ -200,7 +157,9 @@ class obd_reader(GridLayout):
                     self.lock.release()
             
             obdAvailable = True
-            time.sleep(0.5)
+            aliveCounter += 1
+            self.gui_alive.text = str(aliveCounter)
+            self.obd_data['obdAlive'] = aliveCounter
 
     def get_data(self):
         return self.obd_data
