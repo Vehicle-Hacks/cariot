@@ -27,16 +27,18 @@ class obd_reader():
         self.obd_running = True
         self.obd_available = False
         self.obd_data = {
-            "voltage": 0,
-            "coolant": 0,
-            "oil": 0,
-            "load": 0,
-            "intake": 0,
-            "throttle": 0,
-            "rpm": 0,
-            "fuelrate": 0,
-            "ecuVoltage": 0,
-            "obdAlive": 0
+            # Set everything to -1 so in the backend it's clear that we received "empty" data
+            "voltage": -1,
+            "coolant": -1,
+            "oil": -1,
+            "load": -1,
+            "intake": -1,
+            "throttle": -1,
+            "rpm": -1,
+            "fuelrate": -1,
+            "ecuVoltage": -1,
+            "obdAlive": -1,
+            "obdStatus": -1
         }
         self.lock = threading.Lock()
         self.obd_thread = ''
@@ -64,15 +66,19 @@ class obd_reader():
 
             if self.obdStatus == obd.OBDStatus.NOT_CONNECTED:
                 print('OBD: no connection')
+                self.obd_data['obdStatus'] = 0
                 time.sleep(1)
             if self.obdStatus == obd.OBDStatus.ELM_CONNECTED:
                 print('OBD: ELM connected')
+                self.obd_data['obdStatus'] = 1
                 time.sleep(1)
             if self.obdStatus == obd.OBDStatus.OBD_CONNECTED:
                 print('OBD: port detected')
+                self.obd_data['obdStatus'] = 2
                 time.sleep(1)
             if self.obdStatus == obd.OBDStatus.CAR_CONNECTED:
                 print('OBD: connected')
+                self.obd_data['obdStatus'] = 3
                 connecting = False
             if not self.obd_running:
                 connecting = False
@@ -93,71 +99,89 @@ class obd_reader():
             if obdCoolantAvailable:
                 cmd = obd.commands.COOLANT_TEMP
                 response = obdConnection.query(cmd)
+                self.lock.acquire()
                 if not response.is_null():
-                    self.lock.acquire()
                     self.obd_data['coolant'] = response.value.magnitude
-                    self.lock.release()
+                else:
+                    self.obd_data['coolant'] = -2
+                self.lock.release()
             
             if obdVoltageAvailable:
                 cmd = obd.commands.ELM_VOLTAGE
                 response = obdConnection.query(cmd)
+                self.lock.acquire()
                 if not response.is_null():
-                    self.lock.acquire()
                     self.obd_data['voltage'] = response.value.magnitude
-                    self.lock.release()
-            
+                else:
+                    self.obd_data['voltage'] = -2
+                self.lock.release()
+
+
             if obdOilAvailable:
                 cmd = obd.commands.OIL_TEMP
                 response = obdConnection.query(cmd)
+                self.lock.acquire()
                 if not response.is_null():
-                    self.lock.acquire()
                     self.obd_data['oil'] = response.value
-                    self.lock.release()
-            
+                else:
+                    self.obd_data['oil'] = -2
+                self.lock.release()
+
             if obdLoadAvailable:
                 cmd = obd.commands.ENGINE_LOAD
                 response = obdConnection.query(cmd)
+                self.lock.acquire()
                 if not response.is_null():
-                    self.lock.acquire()
                     self.obd_data['load'] = response.value.magnitude
-                    self.lock.release()
+                else:
+                    self.obd_data['load'] = -2
+                self.lock.release()
             
             if obdIntakeAvailable:
                 cmd = obd.commands.INTAKE_TEMP
                 response = obdConnection.query(cmd)
+                self.lock.acquire()
                 if not response.is_null():
-                    self.lock.acquire()
                     self.obd_data['intake'] = response.value.magnitude
-                    self.lock.release()
+                else:
+                    self.obd_data['intake'] = -2
+                self.lock.release()
                 
             if obdRpmAvailable:
                 response = obdConnection.query(obd.commands.RPM)
+                self.lock.acquire()
                 if not response.is_null():
-                    self.lock.acquire()
                     self.obd_data['rpm'] = response.value.magnitude
-                    self.lock.release()
+                else:
+                    self.obd_data['rpm'] = -2
+                self.lock.release()
                 
             if obdThrottleAvailable:
                 response = obdConnection.query(obd.commands.THROTTLE_POS)
+                self.lock.acquire()
                 if not response.is_null():
-                    self.lock.acquire()
                     self.obd_data['throttle'] = response.value.magnitude
-                    self.lock.release()
+                else:
+                    self.obd_data['throttle'] = -2
+                self.lock.release()
                 
             if obdFuelRateAvailable:
                 response = obdConnection.query(obd.commands.FUEL_RATE)
+                self.lock.acquire()
                 if not response.is_null():
-                    self.lock.acquire()
                     self.obd_data['fuelrate'] = response.value.magnitude
-                    self.lock.release()
+                else:
+                    self.obd_data['fuelrate'] = -2
+                self.lock.release()
                 
             if obdEcuVoltageAvailable:
                 response = obdConnection.query(obd.commands.CONTROL_MODULE_VOLTAGE)
-                
+                self.lock.acquire()
                 if not response.is_null():
-                    self.lock.acquire()
                     self.obd_data['ecuVoltage'] = response.value.magnitude
-                    self.lock.release()
+                else:
+                    self.obd_data['ecuVoltage'] = -2
+                self.lock.release()
             
             obdAvailable = True
             aliveCounter += 1
