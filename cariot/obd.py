@@ -186,7 +186,9 @@ class obd_reader():
             obdAvailable = True
             aliveCounter += 1
             self.gui_alive.text = str(aliveCounter)
+            self.lock.acquire()
             self.obd_data['obdAlive'] = aliveCounter
+            self.lock.release()
             if self.gui_update_fcn:
                 self.gui_update_fcn()
 
