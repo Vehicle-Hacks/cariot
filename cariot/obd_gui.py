@@ -80,3 +80,4 @@ class obd_gui(GridLayout):
         self.gui_rpm.text = str(self.obd.obd_data['rpm']) + ' rpm'
         self.gui_throttle.text = 'Throttle: ' + str(self.obd.obd_data['throttle']) + ' %'
         self.gui_fuelrate.text = 'Fuel Rate: ' + str(self.obd.obd_data['fuelrate'])
+        self.gui_alive.text = str(self.obd.obd_data['obdAlive'])
