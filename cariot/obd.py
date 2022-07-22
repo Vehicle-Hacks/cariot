@@ -29,10 +29,10 @@ class obd_reader():
         self.obd_data = {
             # Set everything to -1 so in the backend it's clear that we received "empty" data
             "voltage": -1,
-            "coolant": -1,
-            "oil": -1,
+            "coolant": -275,
+            "oil": -275,
             "load": -1,
-            "intake": -1,
+            "intake": -275,
             "throttle": -1,
             "rpm": -1,
             "fuelrate": -1,
@@ -104,7 +104,7 @@ class obd_reader():
                     if not response.is_null():
                         self.obd_data['coolant'] = response.value.magnitude
                     else:
-                        self.obd_data['coolant'] = -2
+                        self.obd_data['coolant'] = -280
                     self.lock.release()
                 
                 if obdVoltageAvailable:
@@ -125,7 +125,7 @@ class obd_reader():
                     if not response.is_null():
                         self.obd_data['oil'] = response.value
                     else:
-                        self.obd_data['oil'] = -2
+                        self.obd_data['oil'] = -280
                     self.lock.release()
 
                 if obdLoadAvailable:
@@ -145,7 +145,7 @@ class obd_reader():
                     if not response.is_null():
                         self.obd_data['intake'] = response.value.magnitude
                     else:
-                        self.obd_data['intake'] = -2
+                        self.obd_data['intake'] = -280
                     self.lock.release()
                     
                 if obdRpmAvailable:
@@ -200,4 +200,8 @@ class obd_reader():
                 self.gui_update_fcn()
 
     def get_data(self):
-        return self.obd_data
+        self.lock.acquire()
+        # make a deep copy
+        data = dict(self.obd_data)
+        self.lock.release()
+        return dict

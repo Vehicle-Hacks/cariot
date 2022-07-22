@@ -93,4 +93,7 @@ class gps_reader():
                 continue
 
     def get_data(self):
-        return self.gps_data
+        self.lock.acquire()
+        data = dict(self.gps_data)
+        self.lock.release()
+        return data
